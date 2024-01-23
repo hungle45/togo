@@ -25,7 +25,12 @@ func (tS *taskService) FetchTask(userID uint) ([]domain.Task, domain.ResponseErr
 
 func (tS *taskService) GetTaskByID(userID uint, taskID uint) (domain.Task, domain.ResponseError) {
 	task, rerr := tS.taskRepo.GetTaskByID(taskID)
-	if rerr != nil && rerr.ErrorType() != domain.ErrorNotFound {
+	if rerr != nil {
+		if rerr.ErrorType() == domain.ErrorNotFound {
+			return domain.Task{}, domain.NewReponseError(
+				domain.ErrorNotFound, fmt.Sprintf("task with id %d not found", taskID),
+			)
+		}
 		return domain.Task{}, rerr
 	}
 
@@ -78,7 +83,12 @@ func (tS *taskService) UpdateTask(userID uint, taskID uint, task domain.Task) (d
 }
 
 func (tS *taskService) DeleteTask(userID uint, taskID uint) domain.ResponseError {
-	rerr := tS.taskRepo.DeleteTask(taskID)
+	_, rerr := tS.GetTaskByID(userID, taskID)
+	if rerr != nil {
+		return rerr
+	}
+
+	rerr = tS.taskRepo.DeleteTask(taskID)
 	if rerr != nil {
 		return rerr
 	}
