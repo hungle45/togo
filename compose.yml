@@ -1,0 +1,16 @@
+version: '1.0'
+name: togo
+
+services:
+  db:
+    image: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+
+volumes:
+  todo-mysql-data:
