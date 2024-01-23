@@ -7,17 +7,17 @@ import (
 
 type taskService struct {
 	userRepo domain.UserRepository
-	taskRepo domain.TaskReponsitory
+	taskRepo domain.TaskRepository
 }
 
-func NewTaskService(userRepo domain.UserRepository, taskRepo domain.TaskReponsitory) domain.TaskService {
+func NewTaskService(userRepo domain.UserRepository, taskRepo domain.TaskRepository) domain.TaskService {
 	return &taskService{userRepo: userRepo, taskRepo: taskRepo}
 }
 
 func (tS *taskService) FetchTask(userID uint) ([]domain.Task, domain.ResponseError) {
 	tasks, rerr := tS.taskRepo.FetchTaskByUserID(userID)
 	if rerr != nil {
-		return tasks, rerr
+		return []domain.Task{}, rerr
 	}
 
 	return tasks, nil

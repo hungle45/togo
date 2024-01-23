@@ -10,7 +10,7 @@ import (
 )
 
 var userRepository domain.UserRepository
-var taskRepository domain.TaskReponsitory
+var taskRepository domain.TaskRepository
 
 func TestMain(m *testing.M) {
 	cfg := config.LoadConfig("../../config.yml")

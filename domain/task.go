@@ -36,7 +36,7 @@ type TaskService interface {
 	UpdateTaskLimit(userID uint, targetUserID uint, taskLimitPerDay int) (rerr ResponseError)
 }
 
-type TaskReponsitory interface {
+type TaskRepository interface {
 	FetchTaskByUserID(userID uint) (tasks []Task, rerr ResponseError)
 	GetTaskByID(taskID uint) (res Task, rerr ResponseError)
 	CreateTask(userID uint, task Task) (res Task, rerr ResponseError)

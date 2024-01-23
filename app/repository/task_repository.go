@@ -11,15 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type taskReponsitory struct {
+type taskRepository struct {
 	conn *gorm.DB
 }
 
-func NewTaskRepository(conn *gorm.DB) domain.TaskReponsitory {
-	return &taskReponsitory{conn: conn}
+func NewTaskRepository(conn *gorm.DB) domain.TaskRepository {
+	return &taskRepository{conn: conn}
 }
 
-func (tRepo *taskReponsitory) GetTaskByID(taskID uint) (domain.Task, domain.ResponseError) {
+func (tRepo *taskRepository) GetTaskByID(taskID uint) (domain.Task, domain.ResponseError) {
 	var task domain.Task
 
 	result := tRepo.conn.Where("id = ?", taskID).First(&task)
@@ -37,7 +37,7 @@ func (tRepo *taskReponsitory) GetTaskByID(taskID uint) (domain.Task, domain.Resp
 	return task, nil
 }
 
-func (tRepo *taskReponsitory) FetchTaskByUserID(userID uint) ([]domain.Task, domain.ResponseError) {
+func (tRepo *taskRepository) FetchTaskByUserID(userID uint) ([]domain.Task, domain.ResponseError) {
 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
 	if rerr != nil {
 		return []domain.Task{}, rerr
@@ -54,10 +54,10 @@ func (tRepo *taskReponsitory) FetchTaskByUserID(userID uint) ([]domain.Task, dom
 	return tasks, nil
 }
 
-func (tRepo *taskReponsitory) CreateTask(userID uint, task domain.Task) (domain.Task, domain.ResponseError) {
+func (tRepo *taskRepository) CreateTask(userID uint, task domain.Task) (domain.Task, domain.ResponseError) {
 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
 	if rerr != nil {
-		return task, rerr
+		return domain.Task{}, rerr
 	}
 
 	// tx := tRepo.conn.Begin(&sql.TxOptions{Isolation: sql.LevelSerializable})
@@ -100,7 +100,7 @@ func (tRepo *taskReponsitory) CreateTask(userID uint, task domain.Task) (domain.
 	return task, nil
 }
 
-func (tRepo *taskReponsitory) UpdateTask(taskID uint, task domain.Task) (domain.Task, domain.ResponseError) {
+func (tRepo *taskRepository) UpdateTask(taskID uint, task domain.Task) (domain.Task, domain.ResponseError) {
 	oldTask, rerr := tRepo.GetTaskByID(taskID)
 	if rerr != nil {
 		return domain.Task{}, rerr
@@ -119,7 +119,7 @@ func (tRepo *taskReponsitory) UpdateTask(taskID uint, task domain.Task) (domain.
 	return task, nil
 }
 
-func (tRepo *taskReponsitory) DeleteTask(taskID uint) domain.ResponseError {
+func (tRepo *taskRepository) DeleteTask(taskID uint) domain.ResponseError {
 	task, rerr := tRepo.GetTaskByID(taskID)
 	if rerr != nil {
 		if rerr.ErrorType() == domain.ErrorNotFound {
@@ -138,7 +138,7 @@ func (tRepo *taskReponsitory) DeleteTask(taskID uint) domain.ResponseError {
 	return nil
 }
 
-// func (tRepo *taskReponsitory) CountTodayTaskByUserID(userID uint) (int, domain.ResponseError) {
+// func (tRepo *taskRepository) CountTodayTaskByUserID(userID uint) (int, domain.ResponseError) {
 // 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
 // 	if rerr != nil {
 // 		return 0, rerr
@@ -160,7 +160,7 @@ func (tRepo *taskReponsitory) DeleteTask(taskID uint) domain.ResponseError {
 // 	return len(todayTasks), nil
 // }
 
-func (tRepo *taskReponsitory) SetTaskLimit(userID uint, taskLimitPerDay int) (domain.TaskManager, domain.ResponseError) {
+func (tRepo *taskRepository) SetTaskLimit(userID uint, taskLimitPerDay int) (domain.TaskManager, domain.ResponseError) {
 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
 	if rerr != nil {
 		return domain.TaskManager{}, rerr
@@ -176,7 +176,7 @@ func (tRepo *taskReponsitory) SetTaskLimit(userID uint, taskLimitPerDay int) (do
 	return taskManager, nil
 }
 
-func (tRepo *taskReponsitory) CreateTaskManagerIfNotExists(userID uint) (domain.TaskManager, domain.ResponseError) {
+func (tRepo *taskRepository) CreateTaskManagerIfNotExists(userID uint) (domain.TaskManager, domain.ResponseError) {
 	var taskManager domain.TaskManager
 
 	tx := tRepo.conn.Begin(&sql.TxOptions{Isolation: sql.LevelSerializable})
@@ -216,7 +216,7 @@ func (tRepo *taskReponsitory) CreateTaskManagerIfNotExists(userID uint) (domain.
 	return taskManager, nil
 }
 
-func (tRepo *taskReponsitory) GetTaskManagerByID(taskManagerID uint) (domain.TaskManager, domain.ResponseError) {
+func (tRepo *taskRepository) GetTaskManagerByID(taskManagerID uint) (domain.TaskManager, domain.ResponseError) {
 	var taskManager domain.TaskManager
 
 	result := tRepo.conn.Where("id = ?", taskManagerID).First(&taskManager)
@@ -234,7 +234,7 @@ func (tRepo *taskReponsitory) GetTaskManagerByID(taskManagerID uint) (domain.Tas
 	return taskManager, nil
 }
 
-func (tRepo *taskReponsitory) GetTaskManagerByUserID(userID uint) (domain.TaskManager, domain.ResponseError) {
+func (tRepo *taskRepository) GetTaskManagerByUserID(userID uint) (domain.TaskManager, domain.ResponseError) {
 	var taskManager domain.TaskManager
 
 	result := tRepo.conn.Where("user_id = ?", userID).First(&taskManager)

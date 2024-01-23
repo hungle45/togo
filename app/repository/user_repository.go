@@ -31,12 +31,12 @@ func (uRepo *userRepository) GetUserByID(userID uint) (domain.User, domain.Respo
 
 	result := uRepo.conn.Where("id = ?", userID).First(&user)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorNotFound, result.Error.Error(),
 		)
 	}
 	if result.Error != nil {
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorInternal, result.Error.Error(),
 		)
 	}
@@ -49,12 +49,12 @@ func (uRepo *userRepository) GetUserByEmail(email string) (domain.User, domain.R
 
 	result := uRepo.conn.Where("email = ?", email).First(&user)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorNotFound, result.Error.Error(),
 		)
 	}
 	if result.Error != nil {
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorInternal, result.Error.Error(),
 		)
 	}
@@ -65,7 +65,7 @@ func (uRepo *userRepository) GetUserByEmail(email string) (domain.User, domain.R
 func (uRepo *userRepository) CreateUser(user domain.User) (domain.User, domain.ResponseError) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorInternal, err.Error(),
 		)
 	}
@@ -74,11 +74,11 @@ func (uRepo *userRepository) CreateUser(user domain.User) (domain.User, domain.R
 	result := uRepo.conn.Create(&user)
 	if result.Error != nil {
 		if result.Error.Error() == "Error 1062 (23000): Duplicate entry 'admin@gmail.com' for key 'users.email'" {
-			return user, domain.NewReponseError(
+			return domain.User{}, domain.NewReponseError(
 				domain.ErrorAlreadyExists, fmt.Sprintf("Email %v has been used", user.Email),
 			)
 		}
-		return user, domain.NewReponseError(
+		return domain.User{}, domain.NewReponseError(
 			domain.ErrorInternal, result.Error.Error(),
 		)
 	}

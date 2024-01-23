@@ -11,7 +11,9 @@ type responseErrorImp struct {
 	message   string
 }
 
-func (r *responseErrorImp) ResponseError() {}
+func (r *responseErrorImp) ResponseError() {
+	// Noncompliant
+}
 
 func (r *responseErrorImp) Message() string {
 	return r.message
