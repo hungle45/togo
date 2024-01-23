@@ -58,5 +58,10 @@ func StartServer(cfg config.Config) {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	s.ListenAndServe()
+
+	log.Printf("Server running at %v:%v", cfg.App.Server.Host, cfg.App.Server.Port)
+	err := s.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

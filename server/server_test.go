@@ -19,16 +19,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const contentTypeJSON = "application/json"
+
+const headerContentType = "Content-Type"
+
 func signUp(t *testing.T, router *gin.Engine, user map[string]interface{}) {
-	jsonVlaue, err := json.Marshal(user)
+	jsonValue, err := json.Marshal(user)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest("POST", SignUpURL, bytes.NewBuffer(jsonVlaue))
+	req, err := http.NewRequest("POST", SignUpURL, bytes.NewBuffer(jsonValue))
 	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerContentType, contentTypeJSON)
 
-	sigupRes := httptest.NewRecorder()
-	router.ServeHTTP(sigupRes, req)
+	signupRes := httptest.NewRecorder()
+	router.ServeHTTP(signupRes, req)
 }
 
 func login(t *testing.T, router *gin.Engine, user map[string]interface{}) string {
@@ -37,7 +41,7 @@ func login(t *testing.T, router *gin.Engine, user map[string]interface{}) string
 
 	login, err := http.NewRequest("POST", LoginURL, bytes.NewBuffer(loginReq))
 	require.NoError(t, err)
-	login.Header.Set("Content-Type", "application/json")
+	login.Header.Set(headerContentType, contentTypeJSON)
 
 	loginRes := httptest.NewRecorder()
 	router.ServeHTTP(loginRes, login)
@@ -46,7 +50,8 @@ func login(t *testing.T, router *gin.Engine, user map[string]interface{}) string
 
 	loginResBody := loginRes.Body.String()
 	var loginResBodyMap = map[string]interface{}{}
-	json.Unmarshal([]byte(loginResBody), &loginResBodyMap)
+	err = json.Unmarshal([]byte(loginResBody), &loginResBodyMap)
+	require.NoError(t, err)
 
 	return loginResBodyMap["data"].(map[string]interface{})["token"].(string)
 }
@@ -62,7 +67,7 @@ func createRandomTask(t *testing.T, router *gin.Engine, token string) {
 
 	req, err := http.NewRequest("POST", TaskURL, bytes.NewBuffer(taskReq))
 	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerContentType, contentTypeJSON)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	res := httptest.NewRecorder()
@@ -79,7 +84,7 @@ func autoCreateTask(t *testing.T, router *gin.Engine, token string, syn *sync.Wa
 func checkTaskAmount(t *testing.T, router *gin.Engine, token string) {
 	req, err := http.NewRequest("GET", TaskURL, nil)
 	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerContentType, contentTypeJSON)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	res := httptest.NewRecorder()
@@ -89,7 +94,8 @@ func checkTaskAmount(t *testing.T, router *gin.Engine, token string) {
 
 	ResBody := res.Body.String()
 	var ResBodyMap = map[string]interface{}{}
-	json.Unmarshal([]byte(ResBody), &ResBodyMap)
+	err = json.Unmarshal([]byte(ResBody), &ResBodyMap)
+	require.NoError(t, err)
 
 	defaultTaskLimitPerDay, err := strconv.Atoi(os.Getenv("DEFAULT_TASK_LIMIT_PER_DAY"))
 	if err != nil {

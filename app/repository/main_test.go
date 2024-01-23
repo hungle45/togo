@@ -18,7 +18,10 @@ func TestMain(m *testing.M) {
 	db := database.NewMySQLDatabase(&cfg)
 	conn := db.GetConn()
 
-	db.GetConn().AutoMigrate(&domain.User{})
+	err := db.GetConn().AutoMigrate(&domain.User{})
+	if err != nil {
+		panic(err)
+	}
 
 	userRepository = repository.NewUserReposity(conn)
 	taskRepository = repository.NewTaskRepository(conn)
