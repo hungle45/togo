@@ -73,7 +73,7 @@ func (uRepo *userRepository) CreateUser(user domain.User) (domain.User, domain.R
 
 	result := uRepo.conn.Create(&user)
 	if result.Error != nil {
-		if result.Error.Error() == "Error 1062 (23000): Duplicate entry 'admin@gmail.com' for key 'users.email'" {
+		if result.Error.Error() == fmt.Sprintf("Error 1062 (23000): Duplicate entry '%v' for key 'users.email'", user.Email) {
 			return domain.User{}, domain.NewReponseError(
 				domain.ErrorAlreadyExists, fmt.Sprintf("Email %v has been used", user.Email),
 			)
@@ -85,14 +85,3 @@ func (uRepo *userRepository) CreateUser(user domain.User) (domain.User, domain.R
 
 	return user, nil
 }
-
-// func (uRepo *userRepository) CheckIfExistsByEmail(email string) (bool, domain.ResponseError) {
-// 	var user domain.User
-// 	result := uRepo.conn.Where("email = ?", email).Find(&user)
-// 	if result.Error != nil {
-// 		return false, domain.NewReponseError(
-// 			domain.ErrorInternal, result.Error.Error(),
-// 		)
-// 	}
-// 	return result.RowsAffected > 0, nil
-// }

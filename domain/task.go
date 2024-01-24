@@ -15,7 +15,7 @@ const (
 type TaskManager struct {
 	gorm.Model
 	TaskLimitPerDay int    `json:"task_limit_per_day"`
-	UserID          uint   `json:"user_id" gorm:"index"`
+	UserID          uint   `json:"user_id" gorm:"index;unique"`
 	User            User   `json:"-" gorm:"foreignKey:UserID"`
 	Tasks           []Task `json:"task" gorm:"foreignKey:TaskManagerID"`
 }

@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 	"togo/config"
 	"togo/server"
 	"togo/utils"
@@ -118,7 +117,6 @@ func TestCreateTask(t *testing.T) {
 	token := login(t, router, user)
 
 	var wg sync.WaitGroup
-	time.Sleep(time.Second / 2)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go autoCreateTask(t, router, token, &wg)

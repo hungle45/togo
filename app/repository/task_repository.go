@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -88,7 +88,7 @@ func (tRepo *taskRepository) CreateTask(userID uint, task domain.Task) (domain.T
 			domain.ErrorInternal, err.Error(),
 		)
 	}
-
+	
 	if int(todayTaskCount) > taskManager.TaskLimitPerDay {
 		tx.Rollback()
 		return domain.Task{}, domain.NewReponseError(
@@ -138,28 +138,6 @@ func (tRepo *taskRepository) DeleteTask(taskID uint) domain.ResponseError {
 	return nil
 }
 
-// func (tRepo *taskRepository) CountTodayTaskByUserID(userID uint) (int, domain.ResponseError) {
-// 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
-// 	if rerr != nil {
-// 		return 0, rerr
-// 	}
-
-// 	// check limit task
-// 	var todayTasks []domain.Task
-// 	now := time.Now().In(tRepo.conn.Config.NowFunc().Location())
-// 	startTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-// 	endTime := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, now.Location())
-// 	// todayTaskCount := tRepo.conn.Model(&taskManager).Where("created_at BETWEEN ? AND ?", startTime, endTime).Association("Tasks").Count()
-// 	err := tRepo.conn.Model(&taskManager).Where("created_at BETWEEN ? AND ?", startTime, endTime).Association("Tasks").Find(&todayTasks)
-// 	if err != nil {
-// 		return 0, domain.NewReponseError(
-// 			domain.ErrorInternal, err.Error(),
-// 		)
-// 	}
-
-// 	return len(todayTasks), nil
-// }
-
 func (tRepo *taskRepository) SetTaskLimit(userID uint, taskLimitPerDay int) (domain.TaskManager, domain.ResponseError) {
 	taskManager, rerr := tRepo.CreateTaskManagerIfNotExists(userID)
 	if rerr != nil {
@@ -179,41 +157,67 @@ func (tRepo *taskRepository) SetTaskLimit(userID uint, taskLimitPerDay int) (dom
 func (tRepo *taskRepository) CreateTaskManagerIfNotExists(userID uint) (domain.TaskManager, domain.ResponseError) {
 	var taskManager domain.TaskManager
 
-	tx := tRepo.conn.Begin(&sql.TxOptions{Isolation: sql.LevelSerializable})
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	result := tx.Where("user_id = ?", userID).First(&taskManager)
-
 	defaultTaskLimitPerDay, err := strconv.Atoi(os.Getenv("DEFAULT_TASK_LIMIT_PER_DAY"))
 	if err != nil {
 		defaultTaskLimitPerDay = 5
 	}
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		taskManager = domain.TaskManager{
-			TaskLimitPerDay: defaultTaskLimitPerDay,
-			UserID:          userID,
-		}
-		rerr := tx.Create(&taskManager).Error
-		if rerr != nil {
-			tx.Rollback()
-			return domain.TaskManager{}, domain.NewReponseError(
-				domain.ErrorInternal, result.Error.Error(),
-			)
-		}
-	} else if result.Error != nil {
-		tx.Rollback()
-		return domain.TaskManager{}, domain.NewReponseError(
-			domain.ErrorInternal, result.Error.Error(),
-		)
+	taskManager = domain.TaskManager{
+		TaskLimitPerDay: defaultTaskLimitPerDay,
+		UserID:          userID,
 	}
 
-	tx.Commit()
+	err = tRepo.conn.Create(&taskManager).Error
+	if err != nil {
+		if err.Error() == fmt.Sprintf("Error 1062 (23000): Duplicate entry '%v' for key 'task_managers.user_id'", userID) {
+			return tRepo.GetTaskManagerByUserID(userID)
+		}
+		return domain.TaskManager{}, domain.NewReponseError(
+			domain.ErrorInternal, err.Error(),
+		)
+	}
 	return taskManager, nil
+
+	// tx := tRepo.conn.Begin()
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		tx.Rollback()
+	// 	}
+	// }()
+
+	// defaultTaskLimitPerDay, err := strconv.Atoi(os.Getenv("DEFAULT_TASK_LIMIT_PER_DAY"))
+	// if err != nil {
+	// 	defaultTaskLimitPerDay = 5
+	// }
+
+	// taskManager := domain.TaskManager{
+	// 	TaskLimitPerDay: defaultTaskLimitPerDay,
+	// 	UserID:          userID,
+	// }
+
+	// err = tx.Create(&taskManager).Error
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return domain.TaskManager{}, domain.NewReponseError(
+	// 		domain.ErrorInternal, err.Error(),
+	// 	)
+	// }
+
+	// var taskManagerCount int64
+	// result := tx.Model(&taskManager).Where("user_id = ?", userID).Count(&taskManagerCount)
+	// if result.Error != nil {
+	// 	tx.Rollback()
+	// 	return domain.TaskManager{}, domain.NewReponseError(
+	// 		domain.ErrorInternal, result.Error.Error(),
+	// 	)
+	// }
+	// if taskManagerCount > 1 {
+	// 	tx.Rollback()
+	// 	return tRepo.GetTaskManagerByUserID(userID)
+	// }
+
+	// tx.Commit()
+	// return taskManager, nil
 }
 
 func (tRepo *taskRepository) GetTaskManagerByID(taskManagerID uint) (domain.TaskManager, domain.ResponseError) {
